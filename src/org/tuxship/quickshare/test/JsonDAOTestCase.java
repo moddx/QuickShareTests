@@ -41,23 +41,43 @@ public class JsonDAOTestCase extends ServiceTestCase<JsonDAO> {
 	}
 
 	@SmallTest
-	public void testStartService() {
+	public void testBackupAndRestore() {
 		Intent startIntent = new Intent(getContext(), JsonDAO.class);
 		startService(startIntent);
 		bindService(startIntent);
+		
+		JsonDAO dao = getService();
+		
+		addSomeShares(dao);
+		
+		List<String> sharesBefore = dao.getShares();
+		
+		{
+			assertTrue(dao.backupAndClear());
+			List<String> shares = dao.getShares();
+			assertTrue("backupAndClear() did not clear the share db. contains: " + shares.toString(), shares.isEmpty());
+		}
+		
+		{
+			assertTrue(dao.restore());
+			List<String> sharesAfter = dao.getShares();
+			assertEquals("restore() did not restore the exact amount of shares.", sharesBefore.size(), sharesAfter.size());
+			assertEquals("restore() modified the shares", sharesBefore, sharesAfter); 
+		}
+		
+		removeSomeShares(dao);
+		
+		shutdownService();
 	}
 	
 	@MediumTest
-	public void testAddShares() {
-		MyMockApplication myMock = new MyMockApplication();
+	public void testAddShare() {
 		Intent startIntent = new Intent(getContext(), JsonDAO.class);
 		startService(startIntent);
 		bindService(startIntent);
 		
-		setApplication(myMock);
-		setContext(myMock);
-		
 		JsonDAO dao = getService();
+		dao.backupAndClear();
 
 		{
 			int shareCountBefore = dao.getShareCount();
@@ -95,5 +115,43 @@ public class JsonDAOTestCase extends ServiceTestCase<JsonDAO> {
 			}
 		}
 
+		dao.restore();
+		
+		shutdownService();
 	}
+	
+	private void addSomeShares(JsonDAO dao) {
+		{
+			ArrayList<String> files = new ArrayList<String>();
+			files.add("/storage/sdcard0/123Test/Greenhouse.zip");
+			files.add("/storage/sdcard0/123Test/Infos_Studierende.pdf");
+			dao.addShare("qwertz", files);
+		}
+		
+		{
+			ArrayList<String> files = new ArrayList<String>();
+			files.add("/storage/sdcard0/Kompositionen/record0.flac");
+			files.add("/storage/sdcard0/Kompositionen/record1.flac");
+			files.add("/storage/sdcard0/Kompositionen/record2.flac");
+			files.add("/storage/sdcard0/Kompositionen/record3.flac");
+			files.add("/storage/sdcard0/Kompositionen/record4.flac");
+			files.add("/storage/sdcard0/Kompositionen/record5.flac");
+			dao.addShare("A Mol", files);
+		}
+		
+		{
+			ArrayList<String> files = new ArrayList<String>();
+			files.add("/storage/sdcard0/Meine Fotos/Mein Urlaub in Athen/foto mit leerzeichen.png");
+			files.add("/storage/sdcard0/Meine Fotos/Mein Urlaub in Athen/foto mit~! leerzeichen.png");
+			files.add("/storage/sdcard0/Kamera/dmca13123.jpg");
+			dao.addShare("#Really l0ng share name?,; I wonder how+ that* looks~ in different 'places' of the UI :)", files);
+		}
+	}
+	
+	private void removeSomeShares(JsonDAO dao) {
+		dao.removeShare("qwertz");
+		dao.removeShare("A Mol");
+		dao.removeShare("#Really l0ng share name?,; I wonder how+ that* looks~ in different 'places' of the UI :)");
+	}
+	
 }
