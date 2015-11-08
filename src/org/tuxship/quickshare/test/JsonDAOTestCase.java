@@ -42,6 +42,22 @@ public class JsonDAOTestCase extends ServiceTestCase<JsonDAO> {
 	public void tearDown() throws Exception {
 		super.tearDown();
 	}
+	
+	private JsonDAO getDAO() {
+		Intent startIntent = new Intent(getContext(), JsonDAO.class);
+		startService(startIntent);
+		bindService(startIntent);
+
+		JsonDAO dao = getService();
+		dao.backupAndClear();
+
+		return dao;
+	}
+	
+	private void releaseDAO(JsonDAO dao) {
+		dao.restore();
+		shutdownService();
+	}
 
 	@MediumTest
 	public void testBackupAndRestore() {
@@ -75,12 +91,7 @@ public class JsonDAOTestCase extends ServiceTestCase<JsonDAO> {
 
 	@MediumTest
 	public void testAddShare() {
-		Intent startIntent = new Intent(getContext(), JsonDAO.class);
-		startService(startIntent);
-		bindService(startIntent);
-
-		JsonDAO dao = getService();
-		dao.backupAndClear();
+		JsonDAO dao = getDAO();
 
 		{
 			int shareCountBefore = dao.getShareCount();
@@ -125,22 +136,23 @@ public class JsonDAOTestCase extends ServiceTestCase<JsonDAO> {
 
 	@SmallTest
 	public void testAddShareWithEmptyName() {
-
+		JsonDAO dao = getDAO();
+		
+		
+		
+		releaseDAO(dao);
 	}
 
 	@SmallTest
 	public void testAddShareWithoutFiles() {
+		JsonDAO dao = getDAO();
 
+		releaseDAO(dao);
 	}
 
 	@SmallTest
 	public void testAddShareWithSameName() {
-		Intent startIntent = new Intent(getContext(), JsonDAO.class);
-		startService(startIntent);
-		bindService(startIntent);
-
-		JsonDAO dao = getService();
-		dao.backupAndClear();
+		JsonDAO dao = getDAO();
 
 		String shareName = "absolutelyUniqueShare#1a65b2c3";
 
@@ -172,8 +184,7 @@ public class JsonDAOTestCase extends ServiceTestCase<JsonDAO> {
 			e.printStackTrace();
 		}
 
-		dao.restore();
-		shutdownService();
+		releaseDAO(dao);
 	}
 
 	private void addSomeShares(JsonDAO dao) {
