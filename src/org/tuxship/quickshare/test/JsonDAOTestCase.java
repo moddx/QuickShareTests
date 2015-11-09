@@ -8,6 +8,7 @@ import org.tuxship.quickshare.dao.DAOService;
 import org.tuxship.quickshare.dao.DAOService.ShareNotFoundException;
 import org.tuxship.quickshare.dao.DAOService.TokenNotFoundException;
 import org.tuxship.quickshare.dao.JsonDAO;
+
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.test.ServiceTestCase;
@@ -135,18 +136,22 @@ public class JsonDAOTestCase extends ServiceTestCase<JsonDAO> {
 	}
 
 	@SmallTest
-	public void testAddShareWithEmptyName() {
-		JsonDAO dao = getDAO();
-		
-		
-		
-		releaseDAO(dao);
-	}
-
-	@SmallTest
-	public void testAddShareWithoutFiles() {
+	public void testAddShareWithEmptyParameters() {
 		JsonDAO dao = getDAO();
 
+		{
+			List<String> files = new ArrayList<String>();
+			String token = dao.addShare("Share without files", files);
+			assertEquals("addShare() should return an empty String when passed an empty file list.", "", token);
+		}
+		
+		{
+			List<String> files = getRandomFiles(5);
+			String token = dao.addShare("", files);
+			
+			assertEquals("addShare() should return an empty String when passed an empty share name.", "", token);
+		}
+		
 		releaseDAO(dao);
 	}
 
@@ -186,6 +191,27 @@ public class JsonDAOTestCase extends ServiceTestCase<JsonDAO> {
 
 		releaseDAO(dao);
 	}
+	
+	@SmallTest
+	public void testRemoveShare() {
+		JsonDAO dao = getDAO();
+		
+		String shareName = "some share name 123";
+		ArrayList<String> files = new ArrayList<String>();
+		files.add("/storage/sdcard0/123Test/Greenhouse.zip");
+		files.add("/storage/sdcard0/123Test/Infos_Studierende.pdf");
+		dao.addShare(shareName, files);
+		
+		assertTrue(dao.getShareCount() == 1);
+		
+		assertFalse(dao.removeShare(shareName + "different"));
+		assertTrue(dao.removeShare(shareName));
+		assertFalse(dao.removeShare(shareName));
+		
+		assertTrue(dao.getShareCount() == 0);
+		
+		releaseDAO(dao);
+	}
 
 	private void addSomeShares(JsonDAO dao) {
 		{
@@ -219,6 +245,47 @@ public class JsonDAOTestCase extends ServiceTestCase<JsonDAO> {
 		dao.removeShare("qwertz");
 		dao.removeShare("A Mol");
 		dao.removeShare("#Really l0ng share name?,; I wonder how+ that* looks~ in different 'places' of the UI :)");
+	}
+	
+	private static String[] animals = {
+			"Kangaroo",
+			"Tiger",
+			"Cameleon",
+			"Pidgeon",
+			"Weasel",
+			"Rabbit",
+			"Pig",
+			"Snake"
+	};
+	
+	private static String[] adjectives = {
+			"fast",
+			"infurious",
+			"infamous",
+			"legit",
+			"sleepy",
+			"mauling",
+			"murderous"
+	};
+	
+	/*
+	 * Actually generate new file names here and check if they already exist in a hashset
+	 */
+	private List<String> getRandomFiles(int count) {
+		List<String> files = new ArrayList<String>(count);
+		for(int i = 0; i < count; i++) {
+			String f = 	adjectives[ (int)(Math.random() * (adjectives.length - 1)) ] +  
+						animals[ (int)(Math.random() * (animals.length - 1))];
+			
+			if(files.contains(f)) {
+				i--;
+				continue;
+			}
+				
+			files.add(f);
+		}
+		
+		return files;
 	}
 
 }
