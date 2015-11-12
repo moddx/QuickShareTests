@@ -268,9 +268,6 @@ public class JsonDAOTestCase extends ServiceTestCase<JsonDAO> {
 			"murderous"
 	};
 	
-	/*
-	 * Actually generate new file names here and check if they already exist in a hashset
-	 */
 	private List<String> getRandomFiles(int count) {
 		List<String> files = new ArrayList<String>(count);
 		for(int i = 0; i < count; i++) {
